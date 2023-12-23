@@ -1,0 +1,60 @@
+<?php
+	//
+	// 20.04.2016
+	//
+	// Overs and wickets output swapped from orginal scoreboard.php to account for Bradford on Avon CC scoreboard design to show 
+	// overs - wickets - target along the bottom
+	//
+	// 20.04.2016
+	// Form method changed from POST to GET  and data simplified to send one string - 
+	// total[3] wickets[1] overs[2] batsa[3] batsb[3] target[3]
+	//
+	// e.g. 126807042084453 = Total 126, Wickets 8, Overs 07, Batsman A 042, Batsman B 084, Target 453.
+	//
+	// 18.06.2016
+	// Added back in line for original westbury on server scoreboard layout for second line
+	// see lines 50 and 51 
+	// 
+	// 7.11.2016
+	// Added support for american football layout :-)
+	//  
+	
+//	file_put_contents('save.txt', $_GET['data']); // Save the scores! They will be automatically loaded when the scoreboard is turned on. Make sure save.txt is writable by the web server user!
+	file_put_contents('save.txt',"TATATATA");
+	include "php_serial.class.php";
+
+
+	$teamAscore=substr($_GET['data'], 0, 2); //Get first 2 digits
+	$timer=substr($_GET['data'], 3, 4); //Get next 4 digits
+	$teamBscore=substr($_GET['data'], 8, 2); //Get next 2 digits
+	$qtr=substr($_GET['data'], 11, 1); //Get next 1 digits
+	
+	// Now we want to check if the mutiple digit displays are under 10 or over 10 and turn off the LED's instead of showing 0
+	// But if they are 0, show 0
+	//
+	// First strip the leading zeros, then "pad" the number to the required length by adding dashes to turn off
+	// LEDs that would be showing 0 before the actual score
+	
+	if($teamAscore==0) { $teamAscore="-0"; } else { $teamAscore = ltrim($teamAscore, '0'); $teamAscore = str_pad($teamAscore, 2, '-', STR_PAD_LEFT); }
+	if($timer==0) { $timer="---0"; } else { $timer = ltrim($timer, '0'); $timer = str_pad($timer, 4, '-', STR_PAD_LEFT); }
+	if($teamBscore==0) { $teamBscore="-0"; } else { $teamBscore = ltrim($teamBscore, '0'); $teamBscore = str_pad($teamBscore, 2, '-', STR_PAD_LEFT); }
+
+	$serial = new phpSerial;
+	$serial->deviceSet("/dev/ttyACM0");
+	#$serial->deviceSet("/dev/ttyAMA0");
+	$serial->confBaudRate(57600);
+	$serial->confParity("none");
+	$serial->confCharacterLength(8);
+	$serial->confStopBits(1);
+	
+	$tempString="4,".$teamAscore.",".$timer.",".$teamBscore."#";
+	$serial->deviceOpen();
+	$serial->sendMessage($tempString);
+
+
+	$serial->deviceClose();
+
+	echo $tempString;
+	#echo($tempString."<br>");
+	#print_r($_POST);
+?>
