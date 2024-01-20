@@ -3,26 +3,28 @@
   Code for driving multiple common Anode 7 Segment Displays using the TI TPIC6B595 8-Bit Shift Register
   This has been written for use with the Arduino UNO. 
   
-  Connect between shift registers:-
-  SRCLRPin, SRCKPin, RCKPin and connect the SEROUT to SERIN of each cascaded shift register
+
+  The TI TPIC6B595 communcates via SPI protocol. Several ICs can be daisy-chained, to have this cascaded setup work, 
+  SEROUT of each IC has to be connected to SERIN of the next IC in line.
+  SRCLRPin, SRCKPin, RCKPin will be identical signals for all ICs (must all be connected to same net / potential coming from corresponding PINs of the Arduino)
   Make sure the G Pin is grounded
   Make sure SRCLR is tied to 5V
-
 */
 
 #include "Arduino.h"
 #include "PolpoShifter.h"
 #include "SPI.h"
 
+// A Shifter-Object represents a cascaded setup of TPIC6B595 ICs (one or more)
 Shifter::Shifter(int NumOfDigits, int confirmTransmissionPin)
 {
   _NumOfDigits = NumOfDigits;
   pinMode(confirmTransmissionPin, OUTPUT);
   _confirmTransmissionPin = confirmTransmissionPin;
-  SPI.begin();  
+  SPI.begin();
 }
 
-//Clears the full display by disabling all LEDs
+// Clears the full display by disabling all LEDs
 void Shifter::clear()
 {
   int x; 
@@ -38,25 +40,25 @@ void Shifter::clear()
   SPI.endTransaction();  
 }
 
+/*
+Will set Configure the Shift-Registers to show a specific sequence of numbers
+Valid input-characters are numbers from 0-9 and '-' (minus sign)
+The minus sign will be interpreted as a deactivated (fully dark) 7-segment display element
+*/
 int Shifter::display(char* numberToDisplay)
 {
-  //These sets the byte-values for the digits from 0 to 9
-  //int numberArray[] = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512};
-  //int numberArray[] = {207,192,107,233,228,173,175,200,239,237};
+  /*
+  For each 7-segment element, an 8-bit value must be transmitted to represent the status of each individual line-element of the segment
+  Depending on the specific wiring of the 7-segment line-elements to the output pins of the shift-register the 8-bit values for the accepted input chars might differ
+  This is the configuration based on the standard used in this project (see documentation for details)
+  */
   int numberArray[] = {63,6,107,79,86,93,125,7,127, 95};
-  int shiftWordArray[]={0,0,0,0,0,0,0,0};
+  int shiftWordArray[]={0,0,0,0,0,0,0,0}; // This will hold the data to be send to the shift-register, initated as zero-array
 
-  //int numberArray[] = {63, 6, 91, 79, 102, 109, 125, 7, 127, 111};
   int x;
   int res;
   int shiftword;
-  //Initiate the transmission, several parameters have to be set
-  //speedMaximum: The maximum speed of communication
-  //dataOrder: MSBFIRST or LSBFIRST
-  //dataMode: SPI_MODE0, SPI_MODE1, SPI_MODE2, SPI_MODE3 Defines polarity and phases of the signals
-  // take the confirmation Pin to LOW
-  //  send in the data via via SPI:
-  for (x = 0 ;x<_NumOfDigits ; x++)
+  for (x = 0 ; x<_NumOfDigits ; x++)
   {
 	//check if it is a dash, which means digit off
 	if (numberToDisplay[x] == '-'){ 
@@ -64,18 +66,24 @@ int Shifter::display(char* numberToDisplay)
   		shiftWordArray[x] = 0; 
 	} else {
 		//turn the character in to an int
-  		res = numberToDisplay[x] - '0';
+  		res = numberToDisplay[x] - '0'; // This substracts ascii-value of char zero from the asci value to be displayed. For characters '0' to '9' this will result in an integer equal to the number itself
 		//look up the bit pattern to display
   		shiftWordArray[x] = numberArray[res];
 	}
   }
+
+  //Initiate the transmission, several parameters have to be set
+  //speedMaximum: The maximum speed of communication
+  //dataOrder: MSBFIRST or LSBFIRST
+  //dataMode: SPI_MODE0, SPI_MODE1, SPI_MODE2, SPI_MODE3 Defines polarity and phases of the signals
+  // take the confirmation Pin to LOW
+  //  send in the data via via SPI:
   SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));
   for (x = 0 ;x<_NumOfDigits ; x++)
 	{
 	SPI.transfer(shiftWordArray[x]);
 	}
   // take the SS pin high to de-select the chip:
-
   digitalWrite(_confirmTransmissionPin, LOW);
   digitalWrite(_confirmTransmissionPin, HIGH);
   SPI.endTransaction();  

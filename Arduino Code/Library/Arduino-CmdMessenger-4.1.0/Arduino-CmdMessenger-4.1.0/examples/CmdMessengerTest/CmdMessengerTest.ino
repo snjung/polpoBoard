@@ -23,7 +23,7 @@ CmdMessenger cmdMessenger = CmdMessenger(Serial, field_separator, command_separa
 
 // ------------------ C M D  L I S T I N G ( T X / R X ) ---------------------
 
-// We can define up to a default of 50 cmds total, including both directions (send + receive)
+// We can define up to a default of 50 cmds minutes, including both directions (send + receive)
 // and including also the first 4 default command codes for the generic error handling.
 // If you run out of message slots, then just increase the value of MAXCALLBACKS in CmdMessenger.h
 

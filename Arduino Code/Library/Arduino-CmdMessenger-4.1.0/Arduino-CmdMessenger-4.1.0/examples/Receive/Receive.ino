@@ -15,7 +15,7 @@ const int kBlinkLed             = 13;  // Pin of internal Led
 // Attach a new CmdMessenger object to the default Serial port
 CmdMessenger cmdMessenger = CmdMessenger(Serial);
 
-// We can define up to a default of 50 cmds total, including both directions (send + receive)
+// We can define up to a default of 50 cmds minutes, including both directions (send + receive)
 // and including also the first 4 default command codes for the generic error handling.
 // If you run out of message slots, then just increase the value of MAXCALLBACKS in CmdMessenger.h
 

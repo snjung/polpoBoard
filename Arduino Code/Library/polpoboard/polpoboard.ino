@@ -1,36 +1,8 @@
-//////////////////////////////////////////////////////////////
-//
-// Name: scoreBoard.pde
-// Author: Ian Nice - ian@woscc.org.uk
-// Version: 0.1 - 14/03/2013 - First version for testing
-//          0.2 - 01/04/2013 - Updated to produce additional debug
-//          0.3 - 06/04/2013 - Updated to simplify wiring and fix bug
-//          0.4 - 07/04/2013 - Updated to use strings instead of integers
-//          0.5 - 11/04/2013 - Changed to simplify wiring setup, now that i dont have limitation of Integer size.
-//          0.6 - 02/07/2013 - Updated because ted doesnt like preceeding zeros :-)
-//          0.7 - 20/02/2016 - Updated to work with Arduino IDE 1.6.7 - Thanks to James W @ Potton Town CC for helping debug the problems
-//
-// Acknowledgement:
-//  shifter.h - http://www.proto-pic.com
-//  CmdMessenger.h - https://github.com/dreamcat4/cmdmessenger
-//  Streaming.h - http://arduiniana.org/libraries/streaming/
-//  Base64.h - https://github.com/adamvr/arduino-base64
-//  Where the idea began.......
-//  http://www.fritz-hut.com/arduinopi-web-based-controller-for-arduino/
-//
-//////////////////////////////////////////////////////////////
-
-// Command overview
-// 4,BatAScore,Total,BatBScore,Wickets,Overs,Target# //display a score on the board
-// 5# //test mode
-
-// Wiring layout
-// shifter set 1, pins 2 (SRCK),3 (SERIN),4 (RCK) --> Batsman 1 score, total, batsman b score, 9 characters (e.g. 001200050)
-// shifter set 2, pins 5 (SRCK),6 (SERIN),7 (RCK) --> wickets, overs, target, 6 characters (e.g. 240240)
-
+// Commands, the Raspberry will send to the Arduino
+// Command to Update the Scoreboard (CMD-code 004):     4,TeamAScore,TeamBScore,TimeMinutes,TimeSeconds#
 
 // Shifter library available from http://www.proto-pic.com/Resources/shifter.zip
-#include <ShifterStr.h>
+#include <polpoShifter.h>
 
 // CmdMessenger library available from https://github.com/dreamcat4/cmdmessenger
 #include <CmdMessenger.h>
@@ -46,22 +18,18 @@ char field_separator = ',';
 char command_separator = '#';
 
 // set up the chharacter arrays we will use later
-char batsmanAScore[4] = { '\0' };
-char batsmanBScore[4] = { '\0' };
-char total[4] = { '\0' };
-char wickets[2] = { '\0' };
-char overs[3] = { '\0' };
-char target[4] = { '\0' };
+char teamAScore[2] = { '\0' };
+char teamBScore[2] = { '\0' };
+char minutes[2] = { '\0' };
+char seconds[2] = { '\0' };
+char quarter[2] = { '\0' };
 
 // set up the headings 
-char batAHeading[] = "Batsman A Score:";
-char batBHeading[] = "Batsman B Score:";
-char minutesHeading[] = "Total Score:";
-char secondsHeading[] = "Overs:";
-char wicketsHeading[] = "Wickets:";
-char targetHeading[] = "Target:";
-char batAandTotal[] = "Batsman A Score, Total and Batsman B Score:";
-char wicketsOversandTarget[] = "Wickets, Overs and Target:";
+char teamAHeading[] = "TeamA";
+char teamBHeading[] = "TeamB";
+char minutesHeading[] = "Minuten:";
+char secondsHeading[] = "Sekunden:";
+char quarterHeading[] = "Halbzeit:";
 
 // Attach a new CmdMessenger object to the default Serial port
 CmdMessenger cmdMessenger = CmdMessenger(Serial, field_separator, command_separator);
@@ -89,10 +57,9 @@ enum
   kSEND_CMDS_END, // Must not delete this line
 };
 
-// set up 3 groups of shifters
-Shifter shifterSet1(9, 2, 3, 4);  //Bat A, Total, Bat B controlled by pins 2,3 and 4
-Shifter shifterSet2(6, 5, 6, 7);  //Wickets, Overs and Target controlled by pins 5,6 and 7
-
+// set up the shifter object
+int confirmationPin = 6;
+Shifter polpoShifter(8, confirmationPin);  // 8 digits (4x2), confirmation PIN to be discussed
 
 void update_scoreboard()
 {
@@ -102,62 +69,54 @@ void update_scoreboard()
     // lets assume we always get the correctly formatted string
     // its lazy, but should be ok
     
-    char buf[4] = { '\0' };
-    char tempString[10] = { '\0' }; 
+    char buf[2] = { '\0' };             // Initiate a 4 byte buffer to hold the data
+    char tempString[8] = { '\0' }; 
     
-    // Batsman A Score
-    cmdMessenger.copyString(buf, 4);
-    strcpy(batsmanAScore,buf);
-    cmdMessenger.sendCmd(kACK, batAHeading);
-    cmdMessenger.sendCmd(kACK, batsmanAScore);
+    // Team A Score
+    cmdMessenger.copyString(buf, 2);
+    strcpy(teamAScore,buf);
+    cmdMessenger.sendCmd(kACK, teamAHeading);
+    cmdMessenger.sendCmd(kACK, teamAScore);
     
-    // Total Score
-    memset(buf, '\0', 4);
-    cmdMessenger.copyString(buf, 4);
-    strcpy(total,buf);
+    // Team B Score
+    memset(buf, '\0', 2);               // Erase the buffer content
+    cmdMessenger.copyString(buf, 2);
+    strcpy(teamBScore,buf);
+    cmdMessenger.sendCmd(kACK, teamBHeading);
+    cmdMessenger.sendCmd(kACK, teamBScore);
+    
+    // Minutes
+    memset(buf, '\0', 2);
+    cmdMessenger.copyString(buf, 2);
+    strcpy(minutes, buf);
     cmdMessenger.sendCmd(kACK, minutesHeading);
-    cmdMessenger.sendCmd(kACK, total);
+    cmdMessenger.sendCmd(kACK, minutes);
     
-    // Batsman B Score
-    memset(buf, '\0', 4);
-    cmdMessenger.copyString(buf, 4);
-    strcpy(batsmanBScore,buf);
-    strcpy(tempString,batsmanAScore);
-    strcat(tempString,total);
-    strcat(tempString,batsmanBScore);
-    shifterSet1.display(tempString);
-    cmdMessenger.sendCmd(kACK, batBHeading);
-    cmdMessenger.sendCmd(kACK, batsmanBScore);
-    cmdMessenger.sendCmd(kACK, batAandTotal);
-    cmdMessenger.sendCmd(kACK, tempString);
-    
-    // Wickets
-    memset(buf, '\0', 4);
-    cmdMessenger.copyString(buf, 4);
-    strcpy(wickets,buf);
-    cmdMessenger.sendCmd(kACK, wicketsHeading);
-    cmdMessenger.sendCmd(kACK, wickets);
-    
-    // Overs
-    memset(buf, '\0', 4);
-    cmdMessenger.copyString(buf, 4);
-    strcpy(overs,buf);
+    // Seconds
+    memset(buf, '\0', 2);
+    cmdMessenger.copyString(buf, 2);
+    strcpy(seconds, buf);
     cmdMessenger.sendCmd(kACK, secondsHeading);
-    cmdMessenger.sendCmd(kACK, overs);
-    
-    // Target
-    memset(buf, '\0', 4);
-    memset(tempString, '\0', 10);
-    cmdMessenger.copyString(buf, 4);
-    strcpy(target,buf);
-    strcpy(tempString,wickets);
-    strcat(tempString,overs);
-    strcat(tempString,target);
-    shifterSet2.display(tempString);
-    cmdMessenger.sendCmd(kACK, targetHeading);
-    cmdMessenger.sendCmd(kACK, target);
-    cmdMessenger.sendCmd(kACK, wicketsOversandTarget);
+    cmdMessenger.sendCmd(kACK, seconds);
+
+    // Quarter
+    memset(buf, '\0', 1);
+    cmdMessenger.copyString(buf, 1);
+    strcpy(quarter, buf);
+    cmdMessenger.sendCmd(kACK, quarterHeading);
+    cmdMessenger.sendCmd(kACK, quarter);
+
+
+    strcpy(tempString,teamAScore);
+    strcat(tempString,teamBScore);
+    strcat(tempString,minutes);
+    strcat(tempString,seconds);
+
     cmdMessenger.sendCmd(kACK, tempString);
+    
+    polpoShifter.display(tempString);
+    
+    
   }
 }
 
@@ -165,8 +124,7 @@ void test_mode()
 {
     char buf[] = { "Test Mode" };
     cmdMessenger.sendCmd(kACK, buf);
-    shifterSet1.display("111222333");
-    shifterSet2.display("444555");
+    polpoShifter.display("11122233");
 }
 
 // default dreamcat4 stuff
@@ -234,8 +192,7 @@ void setup()
   // Set the displays to 000 on boot
   //shifterSet1.display("000000000");
   //shifterSet2.display("000000");
-  shifterSet1.display("--0--0--0");
-  shifterSet2.display("0-0--0");
+  polpoShifter.display("--0--0--0");
 }
 
 // ------------------ M A I N ( ) --------------------------------------------

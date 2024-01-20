@@ -136,8 +136,6 @@
 		function str_pad_left(string,pad,length) {
 			return (new Array(length+1).join(pad)+string).slice(-length);
 		}
-		
-
 				
 		function teamAscore_change(action,value) {
 			if(action=="plus") {if(teamAscore+value>99) {showError("Punktestand kann nicht größer als 99 sein!");} else {teamAscore=teamAscore+value;updateScoreboardNow();}}
@@ -165,7 +163,6 @@
 				})
 			}
 		}		
-
 		
 		function teamBscore_change(action,value) {
 			if(action=="plus") {if(teamBscore+value>99) {showError("Punktestand kann nicht größer als 99 sein!");} else {teamBscore=teamBscore+value;updateScoreboardNow();}}
@@ -245,7 +242,7 @@
 
 		// Simple function to submit the current score values to the PHP script that updates the Arduino
 		function submitForm(){
-			var formData2 = padToSend(teamAscore,2) + "" + counteractual + "" + padToSend(teamBscore,2) + "" + padToSend(qtr,1);
+			var formData2 = padToSend(teamAscore,2) + "" + padToSend(teamBscore,2) + "" + counteractual  + "" + padToSend(qtr,1);
 			//swal(formData2)
             $.ajax({
                 url: "scoreboard.php",
