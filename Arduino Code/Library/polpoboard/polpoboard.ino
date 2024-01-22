@@ -4,6 +4,8 @@
 // Shifter library available from http://www.proto-pic.com/Resources/shifter.zip
 #include <polpoShifter.h>
 
+#include <polpoDisplay.h>
+
 // CmdMessenger library available from https://github.com/dreamcat4/cmdmessenger
 #include <CmdMessenger.h>
 

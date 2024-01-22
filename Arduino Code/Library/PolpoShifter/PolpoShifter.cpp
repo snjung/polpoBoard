@@ -1,10 +1,8 @@
 /*
   PolpoShifter.cpp - Library
-  Code for driving multiple common Anode 7 Segment Displays using the TI TPIC6B595 8-Bit Shift Register
-  This has been written for use with the Arduino UNO. 
+  Code for driving multiple common Anode 7 Segment Displays using cascaded shift-registers like the TI TPIC6B595
   
-
-  The TI TPIC6B595 communcates via SPI protocol. Several ICs can be daisy-chained, to have this cascaded setup work, 
+  The TI TPIC6B595 communicates via SPI protocol. Several ICs can be daisy-chained, to have this cascaded setup work, 
   SEROUT of each IC has to be connected to SERIN of the next IC in line.
   SRCLRPin, SRCKPin, RCKPin will be identical signals for all ICs (must all be connected to same net / potential coming from corresponding PINs of the Arduino)
   Make sure the G Pin is grounded
@@ -16,6 +14,9 @@
 #include "SPI.h"
 
 // A Shifter-Object represents a cascaded setup of TPIC6B595 ICs (one or more)
+// The confirmTransmissionPin is used for signaling, that transferring the serial data to the internal shift-registers of the ICs is completed
+// and it's status can be transfered to the output registers (thus the output channels of the ICs)
+// Regarding SPI-standards, this is identical to the Slave-Select (SS) Pin. In terms of shift registers, this is identical to the RCK Pin
 Shifter::Shifter(int NumOfDigits, int confirmTransmissionPin)
 {
   _NumOfDigits = NumOfDigits;
