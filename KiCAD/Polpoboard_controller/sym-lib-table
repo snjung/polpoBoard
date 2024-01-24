@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "Polpoboard")(type "KiCad")(uri "${KIPRJMOD}/Polpoboard.kicad_sym")(options "")(descr ""))
+)
