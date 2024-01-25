@@ -13,18 +13,18 @@
 #include <SPI.h>
 #include <Font_Data.h>
 
-class Display
+class polpoDisplay
 {
   public:
-    Display(int width, int CS_PIN);
+    polpoDisplay(int CS_PIN);
     //void clear();
     void display(char* numberToDisplay);
     
   private:
 	//would it make sense to declare numberToDisplay as native c char?
     //String _numberToDisplay;
-    int _width;
     int _CS_PIN;
+    MD_Parola *_P;
   
 };
 
